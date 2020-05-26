@@ -1,0 +1,29 @@
+body {
+    background-color: black;
+    color: white;
+}
+
+#navButtons {
+    button {
+        width: 30px;
+        background-color: gray;
+        border-color: black;
+    }
+
+    p {
+        margin: 0;
+    }
+}
+
+#imgCanvas {
+    margin: 10px 0;
+}
+
+.gamepad-row {
+    display: flex;
+    padding: 5px;
+
+    .gamepad-button, .gamepad-button-label {
+        margin: 5px;
+    }
+}

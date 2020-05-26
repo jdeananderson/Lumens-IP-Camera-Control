@@ -1,0 +1,27 @@
+doctype html
+html
+    head
+        script.
+            const app = {};
+            app.snapshotUrl = "#{snapshotUrl}";
+            app.cameraId = "#{cameraId}";
+
+        script(src="/dist/snapshot.js")
+    body
+        h1 Camera #{cameraId}
+        #navButtons
+            p
+                button#cameraLeftUp \
+                button#cameraUp ^
+                button#cameraRightUp /
+            p
+                button#cameraLeft <-
+                button#cameraHome H
+                button#cameraRight ->
+            p
+                button#cameraLeftDown /
+                button#cameraDown v
+                button#cameraRightDown \
+        canvas(id="imgCanvas", width=688, height=384)
+        #gamepads
+
