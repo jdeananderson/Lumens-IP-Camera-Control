@@ -1,13 +1,14 @@
 import "./css/snapshot.scss";
 
-import axios from "axios";
 import {forEach, reduce} from "lodash-es";
 
 import * as gpLib from "./lib/gamepad";
 import {deadzone} from "./lib/gamepad";
 import {clampJoystick} from "./lib/gamepad";
+import * as camera from "./lib/camera";
 let template = require("./views/message.pug");
 let gamepadButton = require("./views/gamepad-button.pug");
+let presetsTemplate = require("./views/presets.pug");
 
 app.snapshot = {
     timeoutPeriod: 5,
@@ -27,51 +28,34 @@ app.snapshot.img.onload = function() {
 function init() {
     updateSnapshot();
 
-    let buttons = [
-        {id: "cameraLeftUp", x: -1, y: 1},
-        {id: "cameraUp", x: 0, y: 1},
-        {id: "cameraRightUp", x: 1, y: 1},
-        {id: "cameraLeft", x: -1, y: 0},
-        {id: "cameraRight", x: 1, y: 0},
-        {id: "cameraLeftDown", x: -1, y: -1},
-        {id: "cameraDown", x: 0, y: -1},
-        {id: "cameraRightDown", x: 1, y: -1},
-    ];
+    configureArrowButtons();
 
-    buttons.forEach(button => {
-       let element = document.getElementById(button.id);
-       element.onmousedown = function(event) {
-           cameraMove(button.x, button.y)
-       };
-       element.onmouseup = cameraStop;
-    });
-
-    let homeButton = document.getElementById("cameraHome");
-    homeButton.onclick = function(event) {
-        cameraHome();
-    };
+    buildPresets();
 
     if (gpLib.hasGamepadSupport()) {
         updateGamepads();
-        window.requestAnimationFrame(checkForGamepads);
+        window.requestAnimationFrame(gameloop);
     } else {
         console.log("gamepads not supported")
     }
+
+    camera.addOnMoveHandler(removePresetFocus);
 }
 
 let gamepadIdxs = [];
+
 let foundGamepad = false;
 let currentX = 0;
 let currentY = 0;
 let currentZ = 0;
 
-// todo -- this is actually a gameloop and should be renamed
-async function checkForGamepads() {
+async function gameloop() {
     if (gpLib.numGamepadsChanged() !== 0) {
         updateGamepads();
     }
 
     if (gamepadIdxs.length > 0) {
+        // todo -- remove hard-coded index to support multiple controllers
         let gamepad = gpLib.getGamepad(gamepadIdxs[0]);
         if (gamepad) {
             if (!foundGamepad) {
@@ -83,8 +67,9 @@ async function checkForGamepads() {
                 if (button.pressed) {
                     console.log(`button ${idx} pressed`);
                     switch (idx) {
+                        // home button
                         case 16:
-                            await cameraHome();
+                            await camera.cameraHome();
                             break;
                     }
                 }
@@ -99,18 +84,14 @@ async function checkForGamepads() {
             let roundY = Math.round((y + Number.EPSILON) * 100) / 100;
 
             if (currentX !== roundX || currentY !== roundY) {
-                console.log(`x y: ${x}, ${y}`);
-                console.log(`x y rounded: ${roundX}, ${roundY}`);
 
                 currentX = roundX;
                 currentY = roundY;
 
                 if (x === 0 && y === 0) {
-                    console.log("camera stop");
-                    await cameraStop();
+                    await camera.cameraStop();
                 } else {
-                    console.log(`camera move: ${x}, ${y}`);
-                    await cameraMove(x, -y);
+                    await camera.cameraMove(x, -y);
                 }
             }
 
@@ -118,16 +99,13 @@ async function checkForGamepads() {
             let z = deadzone(gamepad.axes[3]);
             let roundZ = Math.round((z + Number.EPSILON) * 100) / 100;
             if (currentZ !== roundZ) {
-                console.log(`z (rounded): ${z} (${roundZ})`);
 
                 currentZ = roundZ;
 
                 if (z === 0) {
-                    console.log("camera stop");
-                    await cameraStop();
+                    await camera.cameraStop();
                 } else {
-                    console.log(`camera zoom: ${z}`);
-                    await cameraZoom(-z);
+                    await camera.cameraZoom(-z);
                 }
             }
         }
@@ -135,7 +113,7 @@ async function checkForGamepads() {
         foundGamepad = false;
     }
 
-    requestAnimationFrame(checkForGamepads);
+    requestAnimationFrame(gameloop);
 }
 
 function updateGamepads() {
@@ -147,12 +125,16 @@ function updateGamepads() {
     gamepadsDiv.innerHTML = "";
     let active = reduce(gamepads, (count, gamepad) => {
         if (gamepad && gamepad.connected) {
-            count += 1;
-            let html = gamepadButton({gamepad: gamepad});
-            let template = document.createElement("template");
-            template.innerHTML = html.trim();
-            gamepadsDiv.appendChild(template.content.firstChild);
-            gamepadIdxs.push(gamepad.index);
+            if (gamepad.mapping === "standard") {
+                count += 1;
+                let html = gamepadButton({gamepad: gamepad});
+                let template = document.createElement("template");
+                template.innerHTML = html.trim();
+                gamepadsDiv.appendChild(template.content.firstChild);
+                gamepadIdxs.push(gamepad.index);
+            } else {
+                console.log(`${gamepad.id} does not use standard mapping!`);
+            }
         }
         return count;
     }, 0);
@@ -162,24 +144,74 @@ function updateGamepads() {
     }
 }
 
-function cameraStop() {
-    return axios.put(`${app.server}/control/${app.cameraId}/stop`);
-}
-
-function cameraMove(x, y) {
-    return axios.put(`${app.server}/control/${app.cameraId}/move/${x}-${y}`);
-}
-
-function cameraZoom(zoom) {
-    return axios.put(`${app.server}/control/${app.cameraId}/zoom/${zoom}`);
-}
-
-function cameraHome() {
-    return axios.put(`${app.server}/control/${app.cameraId}/home`);
-}
-
 function updateSnapshot() {
     app.snapshot.img.src = app.snapshotUrl + "?t=" + Date.now();
+}
+
+function configureArrowButtons() {
+    let buttons = [
+        {id: "cameraLeftUp", x: -1, y: 1},
+        {id: "cameraUp", x: 0, y: 1},
+        {id: "cameraRightUp", x: 1, y: 1},
+        {id: "cameraLeft", x: -1, y: 0},
+        {id: "cameraRight", x: 1, y: 0},
+        {id: "cameraLeftDown", x: -1, y: -1},
+        {id: "cameraDown", x: 0, y: -1},
+        {id: "cameraRightDown", x: 1, y: -1},
+    ];
+
+    buttons.forEach(button => {
+        let element = document.getElementById(button.id);
+        element.onmousedown = function (event) {
+            camera.cameraMove(button.x, button.y);
+        };
+        element.onmouseup = camera.cameraStop;
+    });
+
+    let homeButton = document.getElementById("cameraHome");
+    homeButton.onclick = function (event) {
+        camera.cameraHome();
+    };
+}
+
+function buildPresets() {
+    camera.getPresets().then(results => {
+        let presetsDiv = document.getElementById("presets");
+        presetsDiv.innerHTML = presetsTemplate({presets: results.data});
+
+        // todo -- prevent other clicks until gotoPreset returns
+        forEach(document.getElementsByClassName("preset"), preset => {
+            preset.onclick = function(event) {
+                event.stopPropagation();
+                camera.gotoPreset(preset.dataset.presetId).then(() => updatePresetFocus(preset));
+            }
+        });
+
+        forEach(document.getElementsByClassName("preset-replace"), replaceButton => {
+            replaceButton.onclick = function(event) {
+                event.stopPropagation();
+                camera.setPreset(replaceButton.dataset.presetId)
+                    .then(resp => {
+                        if (resp.data && resp.data.image) {
+                            replaceButton.parentElement.style.setProperty("background-image", `url("${resp.data.image}")`);
+                        }
+                        updatePresetFocus(replaceButton.parentElement)
+                    });
+            }
+        })
+    })
+}
+
+function removePresetFocus() {
+    let element = document.getElementsByClassName("preset selected");
+    if (element.length > 0) {
+        element[0].classList.remove("selected");
+    }
+}
+
+function updatePresetFocus(element) {
+    removePresetFocus();
+    element.classList.add("selected");
 }
 
 window.addEventListener("load", init);

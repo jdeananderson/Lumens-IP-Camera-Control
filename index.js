@@ -7,10 +7,13 @@ const cameraConfigs = [
         id: "1",
         hostname: "192.168.29.229",
         port: 8080,
-        username: "admin",
-        password: "9999"
+        username: "onvif",
+        password: "1234",
+        snapshotUrl: "", // populated below using hostname
     }
 ];
+
+cameraConfigs.forEach(config => config.snapshotUrl = `http://${config.hostname}/dms`);
 
 const app = express();
 
@@ -25,8 +28,7 @@ app.use("/dist", express.static('dist'));
 app.use(express.static('public'));
 
 app.get("/snapshot", (req, res) => {
-    let url = "http://" + cameraConfigs[0].hostname + "/dms";
-    res.render("snapshot", {snapshotUrl: url, cameraId: cameraConfigs[0].id});
+    res.render("snapshot", {snapshotUrl: cameraConfigs[0].snapshotUrl, cameraId: cameraConfigs[0].id});
 });
 
 const controlRouter = require("./routes/control").init(cameraConfigs);

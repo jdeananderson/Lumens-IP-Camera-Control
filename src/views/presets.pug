@@ -1,0 +1,7 @@
+each preset, idx in presets
+    - let row = Math.floor(idx / 3) + 1;
+    - let col = (idx % 3) + 1;
+    - let style = `grid-column-start: ${col}; grid-row-start: ${row}; background-image: url("${preset.image}")`;
+    .preset(id=`preset-${preset.key}`, style=style, data-preset-id=preset.key)
+        .preset-name=preset.key
+        .preset-replace(id=`preset-replace-${preset.key}`, data-preset-id=preset.key) Replace

@@ -1,29 +1,96 @@
+$preset-width: 200px;
+$preset-height: 133px;
+$preset-col-gap: 5px;
+$presets-width: ($preset-width * 3) + ($preset-col-gap * 2);
+
 body {
     background-color: black;
     color: white;
 }
 
-#navButtons {
-    button {
-        width: 30px;
-        background-color: gray;
-        border-color: black;
+.container {
+    display: grid;
+    grid-template-columns: auto 688px $presets-width auto;
+    grid-template-rows: 60px 60px 384px 60px;
+    column-gap: 10px;
+    row-gap: 10px;
+
+    .title {
+        grid-column: 2 ;
+        grid-row: 1;
     }
 
-    p {
-        margin: 0;
+    #navButtons {
+        grid-column: 2;
+        grid-row: 2;
+
+        button {
+            width: 30px;
+            background-color: gray;
+            border-color: black;
+        }
+
+        p {
+            margin: 0;
+        }
     }
-}
 
-#imgCanvas {
-    margin: 10px 0;
-}
+    #imgCanvas {
+        grid-column: 2;
+        grid-row: 3;
+    }
 
-.gamepad-row {
-    display: flex;
-    padding: 5px;
+    #presets {
+        grid-column: 3;
+        grid-row: 3;
 
-    .gamepad-button, .gamepad-button-label {
-        margin: 5px;
+        display: grid;
+        grid-template-columns: repeat(3, $preset-width);
+        grid-template-rows: repeat(3, $preset-height);
+        column-gap: $preset-col-gap;
+        row-gap: 5px;
+
+        .preset {
+            text-align: center;
+            border: 1px solid;
+            cursor: pointer;
+            background-position: center;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3px 0;
+
+            &:hover {
+                border-color: blue;
+            }
+
+            &.selected {
+                border-color: green;
+            }
+
+            .preset-replace {
+                font-size: small;
+                text-decoration: underline;
+
+                &:hover {
+                    color: blue;
+                }
+            }
+        }
+    }
+
+    #gamepads {
+        grid-column: 2;
+        grid-row: 4;
+
+        .gamepad-row {
+            display: flex;
+            padding: 5px;
+
+            .gamepad-button, .gamepad-button-label {
+                margin: 5px;
+            }
+        }
     }
 }

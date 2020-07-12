@@ -30,7 +30,8 @@
     "lodash-es": "^4.17.15",
     "morgan": "^1.9.1",
     "onvif": "^0.6.2",
-    "pug": "^2.0.4"
+    "pug": "^2.0.4",
+    "sharp": "^0.25.4"
   },
   "devDependencies": {
     "css-loader": "^3.4.2",
