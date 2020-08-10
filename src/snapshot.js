@@ -1,6 +1,6 @@
 import "./css/snapshot.scss";
 
-import {forEach, reduce} from "lodash-es";
+import {debounce, forEach, reduce, throttle} from "lodash-es";
 
 import * as gpLib from "./lib/gamepad";
 import {deadzone} from "./lib/gamepad";
@@ -39,7 +39,7 @@ function init() {
         console.log("gamepads not supported")
     }
 
-    camera.addOnMoveHandler(removePresetFocus);
+    camera.addOnMoveHandler(removePresetSelection);
 }
 
 let gamepadIdxs = [];
@@ -67,6 +67,27 @@ async function gameloop() {
                 if (button.pressed) {
                     console.log(`button ${idx} pressed`);
                     switch (idx) {
+                        // A
+                        case 1:
+                            replacePreset();
+                            break;
+                        // ZR
+                        case 7:
+                            gotoPreset();
+                            break;
+                        // D-Pad
+                        case 12:
+                            updatePresetFocus("up");
+                            break;
+                        case 13:
+                            updatePresetFocus("down");
+                            break;
+                        case 14:
+                            updatePresetFocus("left");
+                            break;
+                        case 15:
+                            updatePresetFocus("right");
+                            break;
                         // home button
                         case 16:
                             await camera.cameraHome();
@@ -183,34 +204,113 @@ function buildPresets() {
         forEach(document.getElementsByClassName("preset"), preset => {
             preset.onclick = function(event) {
                 event.stopPropagation();
-                camera.gotoPreset(preset.dataset.presetId).then(() => updatePresetFocus(preset));
+                gotoPreset(preset);
             }
         });
 
         forEach(document.getElementsByClassName("preset-replace"), replaceButton => {
             replaceButton.onclick = function(event) {
                 event.stopPropagation();
-                camera.setPreset(replaceButton.dataset.presetId)
-                    .then(resp => {
-                        if (resp.data && resp.data.image) {
-                            replaceButton.parentElement.style.setProperty("background-image", `url("${resp.data.image}")`);
-                        }
-                        updatePresetFocus(replaceButton.parentElement)
-                    });
+                replacePreset(replaceButton.parentElement);
             }
         })
     })
 }
 
-function removePresetFocus() {
+const updatePresetFocus = debounce(
+    function (direction) {
+        let presets = document.getElementsByClassName("preset");
+        let current, next;
+        for (let i = 0; i < presets.length; i++) {
+            if (presets[i].classList.contains("focus")) {
+                current = presets[i];
+                let j = 0;
+                // up and down calculations assume a row of presets is 3 wide
+                switch (direction) {
+                    case "right":
+                        j = (i+1 >= presets.length) ? 0: i+1;
+                        break;
+                    case "left":
+                        j = (i-1 < 0) ? presets.length - 1: i-1;
+                        break;
+                    case "up":
+                        j = i - 3;
+                        if (j < 0) {
+                            j += presets.length;
+                        }
+                        break;
+                    case "down":
+                        j = i + 3;
+                        if (j >= presets.length) {
+                            j -= presets.length;
+                        }
+                        break;
+                }
+                next = presets[j];
+                break;
+            }
+        }
+
+        if (current) {
+            current.classList.remove("focus");
+        }
+
+        if (!next) {
+            next = presets[0];
+        }
+
+        next.classList.add("focus");
+    },
+    100, {leading: true, trailing: false}
+);
+
+const gotoPreset = debounce(
+    function(preset) {
+        if (!preset) {
+            let presetElements = document.getElementsByClassName("preset focus");
+            if (presetElements.length > 0) {
+                preset = presetElements[0];
+            }
+        }
+
+        if (preset) {
+            camera.gotoPreset(preset.dataset.presetId).then(() => updatePresetSelection(preset));
+        }
+    },
+    100, {leading: true, trailing: false}
+);
+
+const replacePreset = debounce(
+    function(preset) {
+        if (!preset) {
+            let presetElements = document.getElementsByClassName("preset focus");
+            if (presetElements.length > 0) {
+                preset = presetElements[0];
+            }
+        }
+
+        if (preset) {
+            camera.setPreset(preset.dataset.presetId)
+                .then(resp => {
+                    if (resp.data && resp.data.image) {
+                        preset.style.setProperty("background-image", `url("${resp.data.image}")`);
+                    }
+                    updatePresetSelection(preset);
+                });
+        }
+    },
+    100, {leading: true, trailing: false}
+);
+
+function removePresetSelection() {
     let element = document.getElementsByClassName("preset selected");
     if (element.length > 0) {
         element[0].classList.remove("selected");
     }
 }
 
-function updatePresetFocus(element) {
-    removePresetFocus();
+function updatePresetSelection(element) {
+    removePresetSelection();
     element.classList.add("selected");
 }
 

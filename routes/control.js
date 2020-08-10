@@ -54,11 +54,12 @@ router.put("/:cameraId/home", (req, res, next) => {
 });
 
 router.get("/:cameraId/presets", (req, res, next) => {
+    let cameraId = req.params.cameraId;
     let promises = ["001", "002", "003", "004", "005", "006", "007", "008", "009"]
         .map(key => {
-            return fs.promises.access(getPresetImagePath(key))
-                .then(() => buildPreset(key))
-                .catch(() => buildPreset(key, true));
+            return fs.promises.access(getPresetImagePath(cameraId, key))
+                .then(() => buildPreset(cameraId, key))
+                .catch(() => buildPreset(cameraId, key, true));
     });
 
     Promise.all(promises).then(results => {
@@ -67,7 +68,8 @@ router.get("/:cameraId/presets", (req, res, next) => {
 });
 
 router.put("/:cameraId/preset/:preset", (req, res, next) => {
-    let camera = cameras[req.params.cameraId];
+    let cameraId = req.params.cameraId;
+    let camera = cameras[cameraId];
     let preset = req.params.preset;
     camera.setPreset({presetName: preset, presetToken: preset}, function(err) {
         if (err) {
@@ -83,12 +85,12 @@ router.put("/:cameraId/preset/:preset", (req, res, next) => {
                 return new Promise((resolve, reject) => {
                    response.data
                        .pipe(snapshotResizer)
-                       .pipe(fs.createWriteStream(getPresetImagePath(preset)))
+                       .pipe(fs.createWriteStream(getPresetImagePath(cameraId, preset)))
                        .on("finish", () => resolve())
                        .on("error", e => reject(e));
                 });
             })
-            .then(() => res.json(buildPreset(preset)))
+            .then(() => res.json(buildPreset(cameraId, preset)))
             .catch(err => next(err));
     });
 });
@@ -106,13 +108,13 @@ function cameraCallback(action, res, next) {
     }
 }
 
-// todo -- add support for multiple cameras
-function getPresetImagePath(preset) {
-    return path.join(process.cwd(), "public", "presets", `${preset}.png`)
+function getPresetImagePath(cameraId, preset) {
+    return path.join(process.cwd(), "public", "presets", `${cameraId}-${preset}.png`)
 }
 
-function buildPreset(key, noImage=false) {
-    return (noImage) ? {key, image: "/presets/no-image-icon.png"} : {key, image: `/presets/${key}.png`};
+function buildPreset(cameraId, key, noImage=false) {
+    let timestamp = Math.floor(new Date() / 1000);
+    return (noImage) ? {key, image: "/presets/no-image-icon.png"} : {key, image: `/presets/${cameraId}-${key}.png?t=${timestamp}`};
 }
 
 exports.init = function(cameraConfigs) {

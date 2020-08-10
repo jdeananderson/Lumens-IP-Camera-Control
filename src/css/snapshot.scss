@@ -65,6 +65,10 @@ body {
                 border-color: blue;
             }
 
+            &.focus {
+                border-color: blue;
+            }
+
             &.selected {
                 border-color: green;
             }
