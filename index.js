@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const cameraConfigs = [
     {
         id: "1",
-        hostname: "192.168.29.229",
+        hostname: "192.168.108.30",
         port: 8080,
         username: "onvif",
         password: "1234",
@@ -17,12 +17,19 @@ cameraConfigs.forEach(config => config.snapshotUrl = `http://${config.hostname}/
 
 const app = express();
 
-app.use(morgan('tiny'));
+app.use(morgan("tiny", {
+    skip: function(req, res) {
+        // exclude the calls to the snapshot image from logging
+        // todo -- make this a regex
+        return req.baseUrl === "/control" && req.url.startsWith("/1/snapshot");
+    }
+}));
 app.use(cors());
 app.use(bodyParser.json());
 
 app.set("view engine", "pug");
 app.set("views", "./views");
+app.set('json spaces', 2);
 
 app.use("/dist", express.static('dist'));
 app.use(express.static('public'));

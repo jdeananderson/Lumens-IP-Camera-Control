@@ -25,6 +25,15 @@ app.snapshot.img.onload = function() {
     setTimeout(updateSnapshot, app.snapshot.timeoutPeriod);
 };
 
+let gamepadIdxs = [];
+
+let foundGamepad = false;
+let currentX = 0;
+let currentY = 0;
+let currentZ = 0;
+
+let cameraMoving = false;
+
 function init() {
     updateSnapshot();
 
@@ -41,13 +50,6 @@ function init() {
 
     camera.addOnMoveHandler(removePresetSelection);
 }
-
-let gamepadIdxs = [];
-
-let foundGamepad = false;
-let currentX = 0;
-let currentY = 0;
-let currentZ = 0;
 
 async function gameloop() {
     if (gpLib.numGamepadsChanged() !== 0) {
@@ -166,7 +168,7 @@ function updateGamepads() {
 }
 
 function updateSnapshot() {
-    app.snapshot.img.src = app.snapshotUrl + "?t=" + Date.now();
+    app.snapshot.img.src = "/control/1/snapshot?t=" + Date.now();
 }
 
 function configureArrowButtons() {
@@ -214,7 +216,28 @@ function buildPresets() {
                 replacePreset(replaceButton.parentElement);
             }
         })
-    })
+    });
+
+    let updateAllButton = document.getElementById("updatePresetsButton");
+    updateAllButton.onclick = async function (event) {
+        if (cameraMoving) {
+            return
+        }
+
+        removePresetSelection();
+
+        let presets = document.getElementsByClassName("preset");
+        for (let i = 0; i < presets.length; i++) {
+            let preset = presets[i];
+            console.log(`moving to preset ${preset.dataset.presetId}`);
+            await camera.gotoPreset(preset.dataset.presetId);
+            console.log(`updating picture on preset ${preset.dataset.presetId}`);
+            let resp = await camera.setPreset(preset.dataset.presetId);
+            if (resp.data && resp.data.image) {
+                preset.style.setProperty("background-image", `url("${resp.data.image}")`);
+            }
+        }
+    }
 }
 
 const updatePresetFocus = debounce(
@@ -266,6 +289,10 @@ const updatePresetFocus = debounce(
 
 const gotoPreset = debounce(
     function(preset) {
+        if (cameraMoving) {
+            return;
+        }
+
         if (!preset) {
             let presetElements = document.getElementsByClassName("preset focus");
             if (presetElements.length > 0) {
@@ -274,7 +301,15 @@ const gotoPreset = debounce(
         }
 
         if (preset) {
-            camera.gotoPreset(preset.dataset.presetId).then(() => updatePresetSelection(preset));
+            cameraMoving = true;
+            let presetOverlay = preset.parentElement.querySelector(".preset-overlay");
+            presetOverlay.classList.remove("hide");
+            camera.gotoPreset(preset.dataset.presetId)
+                .then(() => {
+                    cameraMoving = false;
+                    presetOverlay.classList.add("hide");
+                    updatePresetSelection(preset);
+                });
         }
     },
     100, {leading: true, trailing: false}
@@ -282,6 +317,10 @@ const gotoPreset = debounce(
 
 const replacePreset = debounce(
     function(preset) {
+        if (cameraMoving) {
+            return;
+        }
+
         if (!preset) {
             let presetElements = document.getElementsByClassName("preset focus");
             if (presetElements.length > 0) {
@@ -290,8 +329,10 @@ const replacePreset = debounce(
         }
 
         if (preset) {
+            cameraMoving = true;
             camera.setPreset(preset.dataset.presetId)
                 .then(resp => {
+                    cameraMoving = false;
                     if (resp.data && resp.data.image) {
                         preset.style.setProperty("background-image", `url("${resp.data.image}")`);
                     }
