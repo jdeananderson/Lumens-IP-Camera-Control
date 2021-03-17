@@ -38,6 +38,10 @@ app.get("/snapshot", (req, res) => {
     res.render("snapshot", {snapshotUrl: cameraConfigs[0].snapshotUrl, cameraId: cameraConfigs[0].id});
 });
 
+app.get("/video", (req, res) => {
+    res.render("video", {snapshotUrl: cameraConfigs[0].snapshotUrl});
+});
+
 const controlRouter = require("./routes/control").init(cameraConfigs);
 app.use("/control", controlRouter);
 

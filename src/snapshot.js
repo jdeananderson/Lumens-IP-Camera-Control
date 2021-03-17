@@ -17,14 +17,6 @@ app.snapshot = {
 
 app.server = "http://localhost:4000";
 
-app.snapshot.img.onload = function() {
-    let canvas = document.getElementById("imgCanvas");
-    let context = canvas.getContext("2d");
-
-    context.drawImage(app.snapshot.img, 0, 0);
-    setTimeout(updateSnapshot, app.snapshot.timeoutPeriod);
-};
-
 let gamepadIdxs = [];
 
 let foundGamepad = false;
@@ -35,6 +27,19 @@ let currentZ = 0;
 let cameraMoving = false;
 
 function init() {
+    let canvas = document.getElementById("imgCanvas");
+    let context = canvas.getContext("2d");
+    let containerStyle = getComputedStyle(document.getElementById("videoContainer"));
+    let widthpx = containerStyle.width;
+    let heightpx = containerStyle.height;
+    let width = widthpx.replace("px", "");
+    let height = heightpx.replace("px", "");
+    app.snapshot.img.onload = function() {
+        canvas.setAttribute("width", widthpx);
+        canvas.setAttribute("height", heightpx);
+        context.drawImage(app.snapshot.img, 0, 0, width, height);
+        setTimeout(updateSnapshot, app.snapshot.timeoutPeriod);
+    }
     updateSnapshot();
 
     configureArrowButtons();
@@ -169,6 +174,7 @@ function updateGamepads() {
 
 function updateSnapshot() {
     app.snapshot.img.src = "/control/1/snapshot?t=" + Date.now();
+    // app.snapshot.img.src = `${app.snapshotUrl}?t=${Date.now()}`;
 }
 
 function configureArrowButtons() {

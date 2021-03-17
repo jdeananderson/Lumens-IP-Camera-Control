@@ -1,8 +1,35 @@
 doctype html
 html
     head
+        script.
+            window.onload = playVideo;
+
+            let img;
+
+            function playVideo() {
+                var canvas = document.getElementById("canvas");
+                var context = canvas.getContext("2d");
+                let container = document.getElementById("videoContainer");
+                let widthpx = container.style.width;
+                let heightpx = container.style.height;
+                let width = widthpx.replace("px", "");
+                let height = heightpx.replace("px", "");
+                img = new Image();
+                img.onload = function() {
+                    canvas.setAttribute("width", widthpx);
+                    canvas.setAttribute("height", heightpx);
+                    context.drawImage(this, 0, 0, width, height);
+                    setTimeout("refresh()", 8);
+                };
+                refresh();
+            }
+
+            function refresh() {
+                img.src = `/control/1/snapshot?t=${Date.now()}`
+            }
     body
         h1 Camera 1
-        p Stream uri: #{streamUri}
-        video(id="video", src=streamUri, width=300, height=100, autoplay=true)
-             | Video not supported
+        - const width = "640px";
+        - const height = "352px";
+        div#videoContainer(style=`width: ${width}; height: ${height}`)
+            canvas#canvas

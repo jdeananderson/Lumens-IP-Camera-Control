@@ -7,6 +7,8 @@ $preset-width: 200px;
 $preset-height: 133px;
 $preset-col-gap: 5px;
 $presets-width: ($preset-width * 3) + ($preset-col-gap * 2);
+$video-width: 640px;
+$video-height: 352px;
 
 body {
     background-color: black;
@@ -19,8 +21,8 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: auto 688px $presets-width auto;
-    grid-template-rows: 60px 60px 384px 60px;
+    grid-template-columns: auto $video-width $presets-width auto;
+    grid-template-rows: 60px 60px $video-height 60px;
     column-gap: 10px;
     row-gap: 10px;
 
@@ -44,9 +46,11 @@ body {
         }
     }
 
-    #imgCanvas {
+    #videoContainer {
         grid-column: 2;
         grid-row: 3;
+        height: $video-height;
+        width: $video-width;
     }
 
     #updatePresetsButton {
