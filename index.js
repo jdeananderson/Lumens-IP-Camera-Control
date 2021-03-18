@@ -2,10 +2,21 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
+const _ = require("lodash");
 const cameraConfigs = [
     {
         id: "1",
+        name: "Camera 1",
         hostname: "192.168.108.30",
+        port: 8080,
+        username: "onvif",
+        password: "1234",
+        snapshotUrl: "", // populated below using hostname
+    },
+    {
+        id: "2",
+        name: "Camera 2",
+        hostname: "192.168.108.29",
         port: 8080,
         username: "onvif",
         password: "1234",
@@ -21,7 +32,7 @@ app.use(morgan("tiny", {
     skip: function(req, res) {
         // exclude the calls to the snapshot image from logging
         // todo -- make this a regex
-        return req.baseUrl === "/control" && req.url.startsWith("/1/snapshot");
+        return req.baseUrl === "/control" && req.url.startsWith("/snapshot", 2);
     }
 }));
 app.use(cors());
@@ -34,8 +45,11 @@ app.set('json spaces', 2);
 app.use("/dist", express.static('dist'));
 app.use(express.static('public'));
 
-app.get("/snapshot", (req, res) => {
-    res.render("snapshot", {snapshotUrl: cameraConfigs[0].snapshotUrl, cameraId: cameraConfigs[0].id});
+app.get("/cameras", (req, res) => {
+    let cameraId = req.query.camera || "1";
+    let selectedCamera = _.find(cameraConfigs, {id: cameraId});
+    console.log(`selectedCamera: ${selectedCamera.name}`);
+    res.render("cameras", {cameraConfigs: cameraConfigs, selectedCamera: selectedCamera});
 });
 
 app.get("/video", (req, res) => {

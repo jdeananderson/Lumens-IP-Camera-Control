@@ -21,18 +21,40 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: auto $video-width $presets-width auto;
+    grid-template-columns: auto 133px $video-width $presets-width auto;
     grid-template-rows: 60px 60px $video-height 60px;
     column-gap: 10px;
     row-gap: 10px;
 
+    #cameraIcons {
+        grid-column: 2;
+        grid-row: 1 / span 4;
+        display: flex;
+        flex-direction: column;
+
+        .cameraPlaceHolder {
+            width: 133px;
+            height: 133px;
+            border: 1px solid gray;
+            margin: 5px 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            a {
+                color:white
+            }
+        }
+    }
+
     .title {
-        grid-column: 2 ;
+        grid-column: 3 ;
         grid-row: 1;
     }
 
     #navButtons {
-        grid-column: 2;
+        grid-column: 3;
         grid-row: 2;
 
         button {
@@ -47,19 +69,19 @@ body {
     }
 
     #videoContainer {
-        grid-column: 2;
+        grid-column: 3;
         grid-row: 3;
         height: $video-height;
         width: $video-width;
     }
 
     #updatePresetsButton {
-        grid-column: 3;
+        grid-column: 4;
         grid-row: 2;
     }
 
     #presets {
-        grid-column: 3;
+        grid-column: 4;
         grid-row: 3;
 
         display: grid;
@@ -123,7 +145,7 @@ body {
     }
 
     #gamepads {
-        grid-column: 2;
+        grid-column: 3;
         grid-row: 4;
 
         .gamepad-row {

@@ -1,4 +1,4 @@
-import "./css/snapshot.scss";
+import "./css/cameras.scss";
 
 import {debounce, forEach, reduce, throttle} from "lodash-es";
 
@@ -173,7 +173,7 @@ function updateGamepads() {
 }
 
 function updateSnapshot() {
-    app.snapshot.img.src = "/control/1/snapshot?t=" + Date.now();
+    app.snapshot.img.src = `/control/${app.cameraId}/snapshot?t=${Date.now()}`;
     // app.snapshot.img.src = `${app.snapshotUrl}?t=${Date.now()}`;
 }
 

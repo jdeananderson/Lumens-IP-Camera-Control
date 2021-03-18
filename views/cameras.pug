@@ -3,13 +3,17 @@ html
     head
         script.
             const app = {};
-            app.snapshotUrl = "#{snapshotUrl}";
-            app.cameraId = "#{cameraId}";
+            app.snapshotUrl = "#{selectedCamera.snapshotUrl}";
+            app.cameraId = "#{selectedCamera.id}";
 
-        script(src="/dist/snapshot.js")
+        script(src="/dist/cameras.js")
     body
         .container
-            h1.title Camera #{cameraId}
+            #cameraIcons
+                each camera in cameraConfigs
+                    .cameraPlaceHolder
+                        a(href=`/cameras?camera=${camera.id}`) #{camera.name}
+            h1.title #{selectedCamera.name}
             #navButtons
                 p
                     button#cameraLeftUp \
