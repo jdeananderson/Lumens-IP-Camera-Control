@@ -75,12 +75,20 @@ async function gameloop() {
                     console.log(`button ${idx} pressed`);
                     switch (idx) {
                         // A
-                        case 1:
-                            replacePreset();
+                        case 0:
+                            gotoPreset();
+                            break;
+                        // Y
+                        case 3:
+                            updatePresetImage();
+                            break;
+                        // ZL
+                        case 6:
+                            selectNextCamera();
                             break;
                         // ZR
                         case 7:
-                            gotoPreset();
+                            replacePreset();
                             break;
                         // D-Pad
                         case 12:
@@ -169,6 +177,11 @@ function updateGamepads() {
 
     if (active === 0) {
         gamepadsDiv.innerHTML = template({message: "Attach a gamepad or press a gamepad button"});
+    } else {
+        let gamepadHelp = document.getElementById("gamepad-help");
+        if (gamepadHelp) {
+            gamepadHelp.style.display = "block";
+        }
     }
 }
 
@@ -201,6 +214,18 @@ function configureArrowButtons() {
     homeButton.onclick = function (event) {
         camera.cameraHome();
     };
+
+    let zoomOutButton = document.getElementById("zoomOut");
+    zoomOutButton.onmousedown = function(event) {
+        camera.cameraZoom(-0.5);
+    }
+    zoomOutButton.onmouseup = camera.cameraStop;
+
+    let zoomInButton = document.getElementById("zoomIn");
+    zoomInButton.onmousedown = function(event) {
+        camera.cameraZoom(0.5);
+    }
+    zoomInButton.onmouseup = camera.cameraStop;
 }
 
 function buildPresets() {
@@ -222,28 +247,36 @@ function buildPresets() {
                 replacePreset(replaceButton.parentElement);
             }
         })
-    });
 
-    let updateAllButton = document.getElementById("updatePresetsButton");
-    updateAllButton.onclick = async function (event) {
-        if (cameraMoving) {
-            return
-        }
-
-        removePresetSelection();
-
-        let presets = document.getElementsByClassName("preset");
-        for (let i = 0; i < presets.length; i++) {
-            let preset = presets[i];
-            console.log(`moving to preset ${preset.dataset.presetId}`);
-            await camera.gotoPreset(preset.dataset.presetId);
-            console.log(`updating picture on preset ${preset.dataset.presetId}`);
-            let resp = await camera.setPreset(preset.dataset.presetId);
-            if (resp.data && resp.data.image) {
-                preset.style.setProperty("background-image", `url("${resp.data.image}")`);
+        let addPresetDiv = document.getElementById("preset-add");
+        if (addPresetDiv) {
+            addPresetDiv.onclick = function(event) {
+                event.stopPropagation();
+                addPreset(addPresetDiv);
             }
         }
-    }
+    });
+
+    // let updateAllButton = document.getElementById("updatePresetsButton");
+    // updateAllButton.onclick = async function (event) {
+    //     if (cameraMoving) {
+    //         return
+    //     }
+    //
+    //     removePresetSelection();
+    //
+    //     let presets = document.getElementsByClassName("preset");
+    //     for (let i = 0; i < presets.length; i++) {
+    //         let preset = presets[i];
+    //         console.log(`moving to preset ${preset.dataset.presetId}`);
+    //         await camera.gotoPreset(preset.dataset.presetId);
+    //         console.log(`updating picture on preset ${preset.dataset.presetId}`);
+    //         let resp = await camera.setPreset(preset.dataset.presetId);
+    //         if (resp.data && resp.data.image) {
+    //             preset.style.setProperty("background-image", `url("${resp.data.image}")`);
+    //         }
+    //     }
+    // }
 }
 
 const updatePresetFocus = debounce(
@@ -321,6 +354,25 @@ const gotoPreset = debounce(
     100, {leading: true, trailing: false}
 );
 
+const addPreset = function(addPresetDiv) {
+    if (cameraMoving) {
+        return;
+    }
+
+    if (addPresetDiv) {
+        cameraMoving = true;
+
+        let parent = document.getElementById("presets");
+        let presetToken =  "" + (parent.childElementCount - 1);
+        camera.addPreset(presetToken)
+            .then(() => {
+                cameraMoving = false;
+                buildPresets();
+            })
+            .catch(err => console.log(err));
+    }
+};
+
 const replacePreset = debounce(
     function(preset) {
         if (cameraMoving) {
@@ -343,7 +395,8 @@ const replacePreset = debounce(
                         preset.style.setProperty("background-image", `url("${resp.data.image}")`);
                     }
                     updatePresetSelection(preset);
-                });
+                })
+                .catch(err => console.log(err));
         }
     },
     100, {leading: true, trailing: false}
@@ -359,6 +412,41 @@ function removePresetSelection() {
 function updatePresetSelection(element) {
     removePresetSelection();
     element.classList.add("selected");
+}
+
+function updatePresetImage(preset) {
+    if (cameraMoving) {
+        return;
+    }
+
+    if (!preset) {
+        preset = document.querySelector(".preset.selected");
+    }
+
+    if (preset && preset.classList.contains("selected")) {
+        cameraMoving = true;
+        camera.getPresetImage(preset.dataset.presetId)
+            .then(resp => {
+                cameraMoving = false;
+                if (resp.data && resp.data.image) {
+                    preset.style.setProperty("background-image", `url("${resp.data.image}")`);
+                }
+            })
+    }
+}
+
+function selectNextCamera() {
+    let cameraDiv = document.querySelector(".cameraPlaceHolder.selected");
+    if (cameraDiv) {
+        let nextCamera = cameraDiv.nextElementSibling;
+        if (!nextCamera) {
+            nextCamera = cameraDiv.parentElement.firstChild;
+        }
+
+        if (nextCamera) {
+            window.location.href = `/cameras?camera=${nextCamera.dataset.cameraId}`;
+        }
+    }
 }
 
 window.addEventListener("load", init);

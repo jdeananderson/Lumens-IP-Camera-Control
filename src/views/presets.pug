@@ -1,9 +1,6 @@
 each preset, idx in presets
-    - let row = Math.floor(idx / 3) + 1;
-    - let col = (idx % 3) + 1;
-    .preset-container(style=`grid-column-start: ${col}; grid-row-start: ${row};`)
-        .preset-overlay.hide
-            i.fas.fa-2x.fa-spin.fa-sync
-        .preset(id=`preset-${preset.key}`, style=`background-image: url("${preset.image}")`, data-preset-id=preset.key)
-            .preset-name=preset.key
-            .preset-replace(id=`preset-replace-${preset.key}`, data-preset-id=preset.key) Replace
+    - locals.preset = preset;
+    include preset.pug
+.preset-container
+    #preset-add
+        | Add Preset

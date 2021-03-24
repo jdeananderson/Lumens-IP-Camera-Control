@@ -6,7 +6,7 @@ $fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
 $preset-width: 200px;
 $preset-height: 133px;
 $preset-col-gap: 5px;
-$presets-width: ($preset-width * 3) + ($preset-col-gap * 2);
+$presets-width: 630px;
 $video-width: 640px;
 $video-height: 352px;
 
@@ -22,13 +22,13 @@ body {
 .container {
     display: grid;
     grid-template-columns: auto 133px $video-width $presets-width auto;
-    grid-template-rows: 60px 60px $video-height 60px;
+    grid-template-rows: 60px 65px $video-height 60px auto;
     column-gap: 10px;
     row-gap: 10px;
 
     #cameraIcons {
         grid-column: 2;
-        grid-row: 1 / span 4;
+        grid-row: 1 / span 5;
         display: flex;
         flex-direction: column;
 
@@ -41,6 +41,10 @@ body {
             display: flex;
             align-items: center;
             justify-content: center;
+
+            &.selected {
+                border-color: green;
+            }
 
             a {
                 color:white
@@ -56,6 +60,11 @@ body {
     #navButtons {
         grid-column: 3;
         grid-row: 2;
+        width: 200px;
+        display: flex;
+        flex-flow: column;
+        flex-wrap: wrap;
+        justify-content: space-around;
 
         button {
             width: 30px;
@@ -63,7 +72,7 @@ body {
             border-color: black;
         }
 
-        p {
+        div {
             margin: 0;
         }
     }
@@ -82,17 +91,18 @@ body {
 
     #presets {
         grid-column: 4;
-        grid-row: 3;
+        grid-row: 2 / span 4;
 
-        display: grid;
-        grid-template-columns: repeat(3, $preset-width);
-        grid-template-rows: repeat(3, $preset-height);
-        column-gap: $preset-col-gap;
-        row-gap: 5px;
+        display: flex;
+        flex-flow: row wrap;
+        padding: 2px;
 
         .preset-container {
             position: relative;
+            margin: 4px;
             padding: 3px 0;
+            width: $preset-width;
+            height: $preset-height;
 
             .preset-overlay {
                 display: flex;
@@ -107,7 +117,7 @@ body {
                 z-index: 10;
             }
 
-            .preset {
+            .preset, #preset-add {
                 text-align: center;
                 border: 1px solid;
                 cursor: pointer;
@@ -139,6 +149,10 @@ body {
                     }
                 }
             }
+
+            #preset-add {
+                justify-content: center;
+            }
         }
 
 
@@ -155,6 +169,19 @@ body {
             .gamepad-button, .gamepad-button-label {
                 margin: 5px;
             }
+        }
+    }
+
+    #gamepad-help {
+        grid-column: 3;
+        grid-row: 5;
+
+        display: none;
+        padding: 5px;
+
+        table {
+            border: 1px solid gray;
+            border-spacing: 10px;
         }
     }
 }

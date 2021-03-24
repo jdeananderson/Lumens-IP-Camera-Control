@@ -11,27 +11,57 @@ html
         .container
             #cameraIcons
                 each camera in cameraConfigs
-                    .cameraPlaceHolder
+                    - let style = camera.id === selectedCamera.id ? "selected" : "";
+                    .cameraPlaceHolder(class=style, data-camera-id=camera.id)
                         a(href=`/cameras?camera=${camera.id}`) #{camera.name}
             h1.title #{selectedCamera.name}
             #navButtons
-                p
+                div
                     button#cameraLeftUp \
                     button#cameraUp ^
                     button#cameraRightUp /
-                p
+                div
                     button#cameraLeft <-
                     button#cameraHome H
                     button#cameraRight ->
-                p
+                div
                     button#cameraLeftDown /
                     button#cameraDown v
                     button#cameraRightDown \
+                div
+                    button#zoomOut -
+                    button#zoomIn +
             #videoContainer
                 canvas#imgCanvas
-            button#updatePresetsButton
-                span.fas.fa-camera
-                |  Update All
+            //- button#updatePresetsButton
+            //-     span.fas.fa-camera
+            //-     |  Update All
             #presets
             #gamepads
+            #gamepad-help
+                table
+                    tr
+                        td Left joystick
+                        td Move camera
+                    tr
+                        td Right joystick
+                        td Zoom
+                    tr
+                        td D-Pad
+                        td Navigate presets
+                    tr
+                        td A
+                        td Move camera to selected preset
+                    tr
+                        td Y
+                        td Update image for selected preset
+                    tr
+                        td ZR
+                        td Replace selected preset with current camera position
+                    tr
+                        td ZL
+                        td Switch to next camera
+                    tr
+                        td Home
+                        td Move camera to home position
 

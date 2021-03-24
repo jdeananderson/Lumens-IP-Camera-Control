@@ -32,6 +32,14 @@ export function gotoPreset(preset) {
     return axios.put(`${buildBaseUrl()}/move/preset/${preset}`);
 }
 
+export function getPresetImage(presetKey) {
+    return axios.get(`${buildBaseUrl()}/preset/${presetKey}/image`);
+}
+
+export function addPreset(presetName) {
+    return axios.post(`${buildBaseUrl()}/preset`, {presetName})
+}
+
 export function setPreset(preset) {
     return axios.put(`${buildBaseUrl()}/preset/${preset}`);
 }

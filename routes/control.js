@@ -100,39 +100,98 @@ router.get("/:cameraId/actualPresets", (req, res, next) => {
     });
 });
 
-router.put("/:cameraId/preset/:preset", (req, res, next) => {
+router.post("/:cameraId/preset", (req, res, next) => {
     let cameraId = req.params.cameraId;
     let camera = cameras[cameraId];
-    let preset = _.find(camera.presets, {key: req.params.preset});
-    camera.setPreset({presetName: preset.name, presetToken: preset.key}, function(err) {
+    let presetName = req.body.presetName;
+    camera.setPreset({presetName: presetName}, function(err, presetResp) {
         if (err) {
             console.log(err);
             next(err);
             return;
         }
 
+        const presetToken = presetResp[0].setPresetResponse[0].presetToken[0];
+        let preset = {
+            name: presetName,
+            key: presetToken
+        };
+
         const snapshotResizer = sharp().resize(200).png();
 
         axios({url: camera.snapshotUrl, responseType: "stream", auth: {username: camera.username, password: camera.password}})
             .then(response => {
                 return new Promise((resolve, reject) => {
-                   response.data
-                       .pipe(snapshotResizer)
-                       .pipe(fs.createWriteStream(getPresetImagePath(cameraId, preset.key)))
-                       .on("finish", () => resolve())
-                       .on("error", e => reject(e));
+                    response.data
+                        .pipe(snapshotResizer)
+                        .pipe(fs.createWriteStream(getPresetImagePath(cameraId, preset.key)))
+                        .on("finish", () => resolve())
+                        .on("error", e => reject(e));
                 });
             })
-            .then(() => res.json(addPresetImageUrl(cameraId, preset)))
+            .then(() => {
+                preset = addPresetImageUrl(cameraId, preset);
+                camera.presets.push(preset);
+                camera.presets.sort(comparePresets);
+
+                return res.json(preset);
+            })
             .catch(err => next(err));
     });
 });
+
+router.put("/:cameraId/preset/:preset", (req, res, next) => {
+    let cameraId = req.params.cameraId;
+    let camera = cameras[cameraId];
+    let preset = _.find(camera.presets, {key: req.params.preset});
+    if (preset && !preset.locked) {
+        camera.setPreset({presetName: preset.name, presetToken: preset.key}, function (err) {
+            if (err) {
+                console.log(err);
+                next(err);
+                return;
+            }
+
+            const snapshotResizer = sharp().resize(200).png();
+
+            axios({
+                url: camera.snapshotUrl,
+                responseType: "stream",
+                auth: {username: camera.username, password: camera.password}
+            })
+                .then(response => {
+                    return new Promise((resolve, reject) => {
+                        response.data
+                            .pipe(snapshotResizer)
+                            .pipe(fs.createWriteStream(getPresetImagePath(cameraId, preset.key)))
+                            .on("finish", () => resolve())
+                            .on("error", e => reject(e));
+                    });
+                })
+                .then(() => res.json(addPresetImageUrl(cameraId, preset)))
+                .catch(err => next(err));
+        });
+    } else {
+        err = (preset) ? new Error(`preset ${req.params.preset} is locked and cannot be modified`) :
+            new Error(`preset ${req.params.preset} does not exist`);
+        next(err);
+    }
+});
+
+router.get("/:cameraId/preset/:preset/image", (req, res, next) => {
+    let cameraId = req.params.cameraId;
+    let camera = cameras[cameraId];
+    let preset = _.find(camera.presets, {key: req.params.preset});
+    if (preset) {
+        saveAndReturnPresetImage(camera, preset, res, next);
+    }
+})
 
 router.delete("/:cameraId/preset/:preset", (req, res, next) => {
     let cameraId = req.params.cameraId;
     let camera = cameras[cameraId];
     let preset = _.find(camera.presets, {key: req.params.preset});
-    if (preset) {
+    if (preset && !preset.locked) {
         camera.removePreset({presetToken: preset.key}, function(err) {
             if (err) {
                 console.log(err);
@@ -145,7 +204,9 @@ router.delete("/:cameraId/preset/:preset", (req, res, next) => {
             res.json("Deleted preset");
         })
     } else {
-        next(new Error(`preset ${req.params.preset} does not exist`));
+        err = (preset) ? new Error(`preset ${req.params.preset} is locked and cannot be modified`) :
+            new Error(`preset ${req.params.preset} does not exist`);
+        next(err);
     }
 });
 
@@ -184,14 +245,37 @@ function getPresetImagePath(cameraId, preset) {
 }
 
 function addPresetImageUrl(cameraId, preset, noImage=false) {
-    if (noImage) {
-        preset.image = "/presets/no-image-icon.png";
-    } else {
+    if (!noImage) {
         let timestamp = Math.floor(new Date() / 1000);
         preset.image = `/presets/${cameraId}-${preset.key}.png?t=${timestamp}`
     }
 
     return preset;
+}
+
+function saveAndReturnPresetImage(camera, preset, res, next) {
+    const snapshotResizer = sharp().resize(200).png();
+
+    axios({
+        url: camera.snapshotUrl,
+        responseType: "stream",
+        auth: {username: camera.username, password: camera.password}
+    })
+        .then(response => {
+            return new Promise((resolve, reject) => {
+                response.data
+                    .pipe(snapshotResizer)
+                    .pipe(fs.createWriteStream(getPresetImagePath(camera.id, preset.key)))
+                    .on("finish", () => resolve())
+                    .on("error", e => reject(e));
+            });
+        })
+        .then(() => res.json(addPresetImageUrl(camera.id, preset)))
+        .catch(err => next(err));
+}
+
+function comparePresets(a, b) {
+    return a.key.localeCompare(b.key);
 }
 
 exports.init = function(cameraConfigs) {
@@ -204,42 +288,29 @@ exports.init = function(cameraConfigs) {
             }
             console.log(`camera ${cameraConfig.id} at ${cameraConfig.hostname} configured`);
 
-            const setPreset = util.promisify(camera.setPreset.bind(camera));
-
             camera.getPresets(async function(err, presets) {
                 if (err) {
                     console.log(err);
                     return;
                 }
 
-                let presetArray = Object.keys(presets)
-                    .map(presetName => ({name: presetName, key: presets[presetName]}))
-                    .slice(10)
-                ;
+                console.log(`camera ${cameraConfig.id} raw presets: ${JSON.stringify(presets, null, 2)}`)
 
+                let presetArray = Object.keys(presets)
+                    .map(presetName => {
+                        let key = "" + presets[presetName];
+                        return {
+                            name: presetName,
+                            key: key,
+                            locked: cameraConfig.presetLocks.includes(key)
+                        };
+                    })
+                    .sort(comparePresets);
+
+                console.log(`camera ${cameraConfig.id} presets: ${JSON.stringify(presetArray, null, 2)}`);
                 console.log(`num of presets: ${presetArray.length}`);
 
-                // todo -- remove extra presets and try code below again
-                // todo -- for some reason camera.setPreset() sometimes returns the same token
-
-                // if (presetArray.length < 3) {
-                //     for (let i = presetArray.length; i <= 3; i++) {
-                //         try {
-                //             const presetName = "0" + (i + 10);
-                //             console.log(`creating preset ${presetName}`);
-                //             const presetResp = await setPreset({presetName: presetName});
-                //             console.log(`created preset ${JSON.stringify(presetResp, null, 2)}`)
-                //             const presetToken = presetResp[0].setPresetResponse[0].presetToken[0];
-                //             presetArray.push({name: presetName, key: presetToken});
-                //         } catch (err) {
-                //             console.log(err);
-                //         }
-                //     }
-                // }
-
                 camera.presets = presetArray;
-
-                console.log(`camera ${cameraConfig.id} presets: ${JSON.stringify(camera.presets, null, 2)}`);
             });
         });
         camera.snapshotUrl = cameraConfig.snapshotUrl;

@@ -6,21 +6,51 @@ const _ = require("lodash");
 const cameraConfigs = [
     {
         id: "1",
-        name: "Camera 1",
-        hostname: "192.168.108.30",
-        port: 8080,
-        username: "onvif",
-        password: "1234",
-        snapshotUrl: "", // populated below using hostname
-    },
-    {
-        id: "2",
-        name: "Camera 2",
+        name: "Left",
         hostname: "192.168.108.29",
         port: 8080,
         username: "onvif",
         password: "1234",
-        snapshotUrl: "", // populated below using hostname
+        presetLocks: [
+            "000",
+            "001",
+            "002",
+            "003",
+            "004",
+        ],
+        snapshotUrl: "",
+    },
+    {
+        id: "2",
+        name: "Center",
+        hostname: "192.168.108.30",
+        port: 8080,
+        username: "onvif",
+        password: "1234",
+        presetLocks: [
+            "preset000",
+            "preset001",
+            "preset002",
+            "preset003",
+            "preset004",
+        ],
+        snapshotUrl: "",
+    },
+    {
+        id: "3",
+        name: "Right",
+        hostname: "192.168.108.31",
+        port: 8080,
+        username: "onvif",
+        password: "1234",
+        presetLocks: [
+            "000",
+            "001",
+            "002",
+            "003",
+            "004",
+        ],
+        snapshotUrl: "",
     }
 ];
 
