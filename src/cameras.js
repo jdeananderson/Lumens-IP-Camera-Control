@@ -9,6 +9,7 @@ import * as camera from "./lib/camera";
 let template = require("./views/message.pug");
 let gamepadButton = require("./views/gamepad-button.pug");
 let presetsTemplate = require("./views/presets.pug");
+let cameraDataTemplate = require("./views/cameraData.pug");
 
 app.snapshot = {
     timeoutPeriod: 5,
@@ -41,10 +42,9 @@ function init() {
         setTimeout(updateSnapshot, app.snapshot.timeoutPeriod);
     }
     updateSnapshot();
-
     configureArrowButtons();
-
     buildPresets();
+    updateCameraData();
 
     if (gpLib.hasGamepadSupport()) {
         updateGamepads();
@@ -82,13 +82,17 @@ async function gameloop() {
                         case 3:
                             updatePresetImage();
                             break;
+                        // R
+                        case 5:
+                            replacePreset();
+                            break;
                         // ZL
                         case 6:
-                            selectNextCamera();
+                            selectPreviousCamera();
                             break;
                         // ZR
                         case 7:
-                            replacePreset();
+                            selectNextCamera();
                             break;
                         // D-Pad
                         case 12:
@@ -226,6 +230,21 @@ function configureArrowButtons() {
         camera.cameraZoom(0.5);
     }
     zoomInButton.onmouseup = camera.cameraStop;
+}
+
+function updateCameraData() {
+    camera.getWhiteBalance()
+        .then(results => {
+            console.log(results.data);
+            let cameraDataDiv = document.getElementById("cameraData");
+            cameraDataDiv.innerHTML = cameraDataTemplate({whiteBalance: results.data});
+
+            let updateButton = document.getElementById("updateWhiteBalance");
+            updateButton.onclick = function(event) {
+                updateCameraData();
+            }
+        })
+        .catch( err => console.error(err));
 }
 
 function buildPresets() {
@@ -445,6 +464,20 @@ function selectNextCamera() {
 
         if (nextCamera) {
             window.location.href = `/cameras?camera=${nextCamera.dataset.cameraId}`;
+        }
+    }
+}
+
+function selectPreviousCamera() {
+    let cameraDiv = document.querySelector(".cameraPlaceHolder.selected");
+    if (cameraDiv) {
+        let prevCamera = cameraDiv.previousElementSibling;
+        if (!prevCamera) {
+            prevCamera = cameraDiv.parentElement.lastChild;
+        }
+
+        if (prevCamera) {
+            window.location.href = `/cameras?camera=${prevCamera.dataset.cameraId}`;
         }
     }
 }

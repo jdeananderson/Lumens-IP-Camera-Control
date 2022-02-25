@@ -227,6 +227,34 @@ router.get("/:cameraId/snapshot", (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.get("/:cameraId/whiteBalance", (req, res, next) => {
+    let cameraId = req.params.cameraId;
+    let camera = cameras[cameraId];
+    camera.getImagingSettings(function(err, imageSettings) {
+        if (err) {
+            console.log(err);
+            next(err);
+            return;
+        }
+        camera.whiteBalance = {
+            mode: imageSettings.whiteBalance.mode,
+            red: imageSettings.whiteBalance.crGain,
+            blue: imageSettings.whiteBalance.cbGain,
+        }
+        res.json(camera.whiteBalance);
+    });
+});
+
+router.put("/:cameraId/whiteBalance", (req, res, next) => {
+    let cameraId = req.params.cameraId;
+    let camera = cameras[cameraId];
+    // todo -- add whitebalance
+    let options = {}
+    camera.setImagingSettings(options, function(err, results, xml) {
+        // todo -- implement
+    });
+});
+
 function cameraCallback(action, res, next) {
     return function(err) {
         if (err) {
@@ -288,13 +316,18 @@ exports.init = function(cameraConfigs) {
             }
             console.log(`camera ${cameraConfig.id} at ${cameraConfig.hostname} configured`);
 
+            camera.getImagingSettings(function(err, imageSettings, xml) {
+                if (err) {
+                    console.log(err);
+                }
+                console.log(imageSettings.whiteBalance);
+            });
+
             camera.getPresets(async function(err, presets) {
                 if (err) {
                     console.log(err);
                     return;
                 }
-
-                console.log(`camera ${cameraConfig.id} raw presets: ${JSON.stringify(presets, null, 2)}`)
 
                 let presetArray = Object.keys(presets)
                     .map(presetName => {
@@ -307,7 +340,6 @@ exports.init = function(cameraConfigs) {
                     })
                     .sort(comparePresets);
 
-                console.log(`camera ${cameraConfig.id} presets: ${JSON.stringify(presetArray, null, 2)}`);
                 console.log(`num of presets: ${presetArray.length}`);
 
                 camera.presets = presetArray;

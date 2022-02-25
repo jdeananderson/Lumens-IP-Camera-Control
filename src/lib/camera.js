@@ -48,6 +48,10 @@ export function addOnMoveHandler(handler) {
     handlers.push(handler);
 }
 
+export function getWhiteBalance() {
+    return axios.get(`${buildBaseUrl()}/whiteBalance`);
+}
+
 function buildBaseUrl() {
     return `${app.server}/control/${app.cameraId}`
 }
