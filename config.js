@@ -1,0 +1,53 @@
+module.exports = [
+    {
+        id: "1",
+        name: "Left",
+        hostname: "192.168.32.31",
+        port: 8080,
+        username: "onvif",
+        password: "1234",
+        presetLocks: [
+            "000",
+            "001",
+            "002",
+            "003",
+            "004",
+        ],
+        whiteBalance: {mode: "MANUAL", red: 21, blue: 128},
+        snapshotUrl: "",
+    },
+    {
+        id: "2",
+        name: "Center",
+        hostname: "192.168.32.30",
+        port: 8080,
+        username: "onvif",
+        password: "1234",
+        presetLocks: [
+            "preset000",
+            "preset001",
+            "preset002",
+            "preset003",
+            "preset004",
+        ],
+        whiteBalance: {mode: "MANUAL", red: 22, blue: 128},
+        snapshotUrl: "",
+    },
+    {
+        id: "3",
+        name: "Right",
+        hostname: "192.168.32.29",
+        port: 8080,
+        username: "onvif",
+        password: "1234",
+        presetLocks: [
+            "000",
+            "001",
+            "002",
+            "003",
+            "004",
+        ],
+        whiteBalance: {mode: "MANUAL", red: 19, blue: 128},
+        snapshotUrl: "",
+    }
+];

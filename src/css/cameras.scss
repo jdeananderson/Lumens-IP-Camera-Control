@@ -1,0 +1,212 @@
+$fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
+@import '~@fortawesome/fontawesome-free/scss/fontawesome';
+@import '~@fortawesome/fontawesome-free/scss/solid';
+@import '~@fortawesome/fontawesome-free/scss/regular';
+
+$preset-width: 200px;
+$preset-height: 133px;
+$preset-col-gap: 5px;
+$presets-width: 630px;
+$video-width: 640px;
+$video-height: 352px;
+
+body {
+    background-color: black;
+    color: white;
+}
+
+.hide {
+    display: none !important;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: auto 133px $video-width $presets-width auto;
+    grid-template-rows: 60px 65px $video-height 60px 60px auto;
+    column-gap: 10px;
+    row-gap: 10px;
+
+    #cameraIcons {
+        grid-column: 2;
+        grid-row: 1 / span 6;
+        display: flex;
+        flex-direction: column;
+
+        .cameraPlaceHolder {
+            width: 133px;
+            height: 133px;
+            border: 1px solid gray;
+            margin: 5px 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &.selected {
+                border-color: green;
+            }
+
+            a {
+                color:white
+            }
+        }
+    }
+
+    .title {
+        grid-column: 3 ;
+        grid-row: 1;
+    }
+
+    #navButtons {
+        grid-column: 3;
+        grid-row: 2;
+        width: 200px;
+        display: flex;
+        flex-flow: column;
+        flex-wrap: wrap;
+        justify-content: space-around;
+
+        button {
+            width: 30px;
+            background-color: gray;
+            border-color: black;
+        }
+
+        div {
+            margin: 0;
+        }
+    }
+
+    #videoContainer {
+        grid-column: 3;
+        grid-row: 3;
+        height: $video-height;
+        width: $video-width;
+    }
+
+    #updatePresetsButton {
+        grid-column: 4;
+        grid-row: 2;
+    }
+
+    #presets {
+        grid-column: 4;
+        grid-row: 2 / span 4;
+
+        display: flex;
+        flex-flow: row wrap;
+        padding: 2px;
+
+        .preset-container {
+            position: relative;
+            margin: 4px;
+            padding: 3px 0;
+            width: $preset-width;
+            height: $preset-height;
+
+            .preset-overlay {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(255, 255, 255, 0.3);
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10;
+            }
+
+            .preset, #preset-add {
+                text-align: center;
+                border: 1px solid;
+                cursor: pointer;
+                background-position: center;
+                height: 100%;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+
+                &:hover {
+                    border-color: blue;
+                }
+
+                &.focus {
+                    border-color: blue;
+                }
+
+                &.selected {
+                    border-color: green;
+                }
+
+                .preset-replace {
+                    font-size: small;
+                    text-decoration: underline;
+
+                    &:hover {
+                        color: blue;
+                    }
+                }
+            }
+
+            #preset-add {
+                justify-content: center;
+            }
+        }
+
+
+    }
+
+    #cameraData {
+        grid-column: 3;
+        grid-row: 4;
+        display: inline-flex;
+        gap: 10px;
+
+        .red {
+            color: red;
+        }
+
+        .blue {
+            color: blue;
+        }
+
+        #updateWhiteBalance {
+            font-size: small;
+            text-decoration: underline;
+            cursor: pointer;
+
+            &:hover {
+                color: blue;
+            }
+        }
+    }
+
+    #gamepads {
+        grid-column: 3;
+        grid-row: 5;
+
+        .gamepad-row {
+            display: flex;
+            padding: 5px;
+
+            .gamepad-button, .gamepad-button-label {
+                margin: 5px;
+            }
+        }
+    }
+
+    #gamepad-help {
+        grid-column: 3;
+        grid-row: 6;
+
+        display: none;
+        padding: 5px;
+
+        table {
+            border: 1px solid gray;
+            border-spacing: 10px;
+        }
+    }
+}

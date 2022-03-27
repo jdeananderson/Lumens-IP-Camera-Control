@@ -3,9 +3,9 @@ const path = require('path');
 module.exports = {
     mode: "development",
     devtool: "eval-source-map",
-    entry: './src/snapshot.js',
+    entry: './src/cameras.js',
     output: {
-        filename: 'snapshot.js',
+        filename: 'cameras.js',
         path: path.resolve(__dirname, 'dist'),
     },
     module: {
@@ -17,6 +17,15 @@ module.exports = {
                     "css-loader",
                     "sass-loader"
                 ]
+            },
+            {
+                test: /\.(svg|eot|woff|woff2|ttf)$/,
+                use: [{
+                    loader: "file-loader",
+                    options: {
+                        publicPath: "/dist"
+                    }
+                }],
             },
             {
                 test: /\.pug$/i,

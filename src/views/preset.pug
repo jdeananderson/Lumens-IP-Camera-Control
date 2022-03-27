@@ -1,0 +1,8 @@
+.preset-container
+    .preset-overlay.hide
+        i.fas.fa-2x.fa-spin.fa-sync
+    - let style= (preset.image) ? `background-image: url("${preset.image}")` : "";
+    .preset(id=`preset-${preset.key}`, style=style, data-preset-id=preset.key)
+        .preset-name=preset.key
+        if !preset.locked
+            .preset-replace(id=`preset-replace-${preset.key}`, data-preset-id=preset.key) Replace
