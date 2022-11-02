@@ -22,7 +22,7 @@ body {
 .container {
     display: grid;
     grid-template-columns: auto 133px $video-width $presets-width auto;
-    grid-template-rows: 60px 65px $video-height 60px 60px auto;
+    grid-template-rows: 60px 65px $video-height 70px 60px auto;
     column-gap: 10px;
     row-gap: 10px;
 
@@ -96,6 +96,7 @@ body {
         display: flex;
         flex-flow: row wrap;
         padding: 2px;
+        align-content: flex-start;
 
         .preset-container {
             position: relative;
@@ -161,23 +162,37 @@ body {
     #cameraData {
         grid-column: 3;
         grid-row: 4;
-        display: inline-flex;
-        gap: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
 
-        .red {
-            color: red;
+        .camera-data-title {
+            display: inline-flex;
+            gap: 10px;
+
+            #updateCameraData {
+                font-size: small;
+                text-decoration: underline;
+                cursor: pointer;
+
+                &:hover {
+                    color: blue;
+                }
+            }
         }
 
-        .blue {
-            color: blue;
+        .whitebalance-container, .focus-container {
+            display: inline-flex;
+            gap: 10px;
+            margin-left: 10px;
         }
 
-        #updateWhiteBalance {
-            font-size: small;
-            text-decoration: underline;
-            cursor: pointer;
+        .whitebalance-container {
+            .red {
+                color: red;
+            }
 
-            &:hover {
+            .blue {
                 color: blue;
             }
         }

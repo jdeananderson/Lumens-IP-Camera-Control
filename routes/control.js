@@ -7,9 +7,62 @@ const sharp = require("sharp");
 const util = require('util')
 const sleep = util.promisify(setTimeout);
 const _ = require("lodash");
+const formatXML = require('xml-formatter')
+
+const CAMERA_DEBUG = false;
 
 const router = express.Router();
 const cameras = {};
+
+const numberRE = /^-?([1-9]\d*|0)(\.\d*)?$/
+const dateRE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d+)?Z$/
+const linerase = function(xml) {
+    if (Array.isArray(xml)) {
+        if (xml.length > 1) {
+            return xml.map(linerase);
+        } else {
+            xml = xml[0];
+        }
+    }
+    if (typeof xml === 'object') {
+        var obj = {};
+        Object.keys(xml).forEach(function(key) {
+            obj[key] = linerase(xml[key]);
+        });
+        return obj;
+    } else {
+        if (xml === 'true') { return true; }
+        if (xml === 'false') { return false; }
+        if (numberRE.test(xml)) { return parseFloat(xml); }
+        if (dateRE.test(xml)) { return new Date(xml); }
+        return xml;
+    }
+};
+
+// autoFocus = 'AUTO' | 'MANUAL'
+Cam.prototype.setAutoFocus = function(autoFocus, callback) {
+    let body = this._envelopeHeader() +
+        '<SetImagingSettings xmlns="http://www.onvif.org/ver20/imaging/wsdl" >' +
+        '<VideoSourceToken xmlns="http://www.onvif.org/ver20/imaging/wsdl" >' +
+        this.activeSource.sourceToken +
+        '</VideoSourceToken>' +
+        '<ImagingSettings xmlns="http://www.onvif.org/ver20/imaging/wsdl" >' +
+        '<Focus xmlns="http://www.onvif.org/ver10/schema">' +
+        '<AutoFocusMode xmlns="http://www.onvif.org/ver10/schema">' + autoFocus + '</AutoFocusMode>' +
+        '<DefaultSpeed xmlns="http://www.onvif.org/ver10/schema">1</DefaultSpeed>' +
+        '</Focus>' +
+        '</ImagingSettings>' +
+        '</SetImagingSettings>' +
+        this._envelopeFooter();
+    this._request({
+        service: 'imaging',
+        body: body
+    }, function(err, data, xml) {
+        if (callback) {
+            callback.call(this, err, err ? null : linerase(data).setImagingSettingsResponse, xml);
+        }
+    }.bind(this));
+};
 
 router.put("/:cameraId/move/left", (req, res, next) => {
     let camera = cameras[req.params.cameraId];
@@ -227,7 +280,7 @@ router.get("/:cameraId/snapshot", (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.get("/:cameraId/whiteBalance", (req, res, next) => {
+router.get("/:cameraId/settings", (req, res, next) => {
     let cameraId = req.params.cameraId;
     let camera = cameras[cameraId];
     camera.getImagingSettings(function(err, imageSettings) {
@@ -241,18 +294,56 @@ router.get("/:cameraId/whiteBalance", (req, res, next) => {
             red: imageSettings.whiteBalance.crGain,
             blue: imageSettings.whiteBalance.cbGain,
         }
-        res.json(camera.whiteBalance);
+        camera.autoFocus = imageSettings.focus.autoFocusMode;
+
+        res.json({
+            whiteBalance: camera.whiteBalance,
+            autoFocus: camera.autoFocus,
+        });
     });
 });
 
-router.put("/:cameraId/whiteBalance", (req, res, next) => {
+router.get("/:cameraId/settings/:setting", (req, res, next) => {
     let cameraId = req.params.cameraId;
     let camera = cameras[cameraId];
-    // todo -- add whitebalance
-    let options = {}
-    camera.setImagingSettings(options, function(err, results, xml) {
-        // todo -- implement
+    let setting = req.params.setting;
+    camera.getImagingSettings(function(err, imageSettings) {
+        if (err) {
+            console.log(err);
+            next(err);
+            return;
+        }
+
+        if (imageSettings.hasOwnProperty(setting)) {
+            res.json(imageSettings[setting]);
+        } else {
+            next(new Error(`${setting} does not exist`));
+        }
     });
+});
+
+router.put("/:cameraId/settings/:setting/:settingValue", (req, res, next) => {
+    let cameraId = req.params.cameraId;
+    let camera = cameras[cameraId];
+    let setting = req.params.setting;
+    let settingValue = req.params.settingValue;
+
+    let callback = function(err, settingsResp) {
+        if (err) {
+            console.log(err);
+            next(err);
+            return;
+        }
+        res.json(settingsResp);
+    };
+
+    if (setting === "focus") {
+        camera.setAutoFocus(settingValue.toUpperCase(), callback);
+    } else {
+        let options = {};
+        options[setting] = settingValue;
+        camera.setImagingSettings(options, callback);
+    }
 });
 
 function cameraCallback(action, res, next) {
@@ -316,11 +407,27 @@ exports.init = function(cameraConfigs) {
             }
             console.log(`camera ${cameraConfig.id} at ${cameraConfig.hostname} configured`);
 
-            camera.getImagingSettings(function(err, imageSettings, xml) {
+            if (CAMERA_DEBUG) {
+                camera.addListener('rawRequest', (data) => {
+                    console.log('========= rawRequest ============');
+                    console.log(formatXML(data));
+                    console.log('========= rawRequest end ========');
+
+                });
+                camera.addListener('rawResponse', (data) => {
+                    console.log('========= rawResponse ============');
+                    console.log(data);
+                    console.log('========= rawResponse end ========');
+
+                });
+            }
+
+            camera.getImagingSettings(function(err, imageSettings) {
                 if (err) {
                     console.log(err);
+                    return;
                 }
-                console.log(imageSettings.whiteBalance);
+                console.log(imageSettings);
             });
 
             camera.getPresets(async function(err, presets) {
@@ -349,8 +456,8 @@ exports.init = function(cameraConfigs) {
 
         cameras[cameraConfig.id] = camera;
     });
-
-    return router;
 };
+
+exports.router = router;
 
 

@@ -78,6 +78,10 @@ async function gameloop() {
                         case 0:
                             gotoPreset();
                             break;
+                        // X
+                        case 2:
+                            toggleAutoFocus();
+                            break;
                         // Y
                         case 3:
                             updatePresetImage();
@@ -233,18 +237,33 @@ function configureArrowButtons() {
 }
 
 function updateCameraData() {
-    camera.getWhiteBalance()
+    camera.getSettings()
         .then(results => {
             console.log(results.data);
             let cameraDataDiv = document.getElementById("cameraData");
-            cameraDataDiv.innerHTML = cameraDataTemplate({whiteBalance: results.data});
+            cameraDataDiv.innerHTML = cameraDataTemplate({settings: results.data});
 
-            let updateButton = document.getElementById("updateWhiteBalance");
+            let updateButton = document.getElementById("updateCameraData");
             updateButton.onclick = function(event) {
                 updateCameraData();
             }
+
+            let toggleAutoFocusButton = document.getElementById("toggleAutoFocus");
+            toggleAutoFocusButton.onclick = function(event) {
+                toggleAutoFocus();
+            }
         })
         .catch( err => console.error(err));
+}
+
+function toggleAutoFocus() {
+    let toggleAutoFocusButton = document.getElementById("toggleAutoFocus");
+    let currentMode  = toggleAutoFocusButton.innerText;
+    camera.toggleAutoFocus(currentMode)
+        .then(() => {
+            updateCameraData();
+        })
+        .catch(err => console.error(err));
 }
 
 function buildPresets() {
@@ -367,6 +386,7 @@ const gotoPreset = debounce(
                     cameraMoving = false;
                     presetOverlay.classList.add("hide");
                     updatePresetSelection(preset);
+                    updateCameraData();
                 });
         }
     },

@@ -3,9 +3,11 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const _ = require("lodash");
+const cameraControl = require("./routes/control");
 
 const cameraConfigs = require("./config");
 cameraConfigs.forEach(config => config.snapshotUrl = `http://${config.hostname}/dms`);
+cameraControl.init(cameraConfigs);
 
 const app = express();
 
@@ -37,8 +39,13 @@ app.get("/video", (req, res) => {
     res.render("video", {snapshotUrl: cameraConfigs[0].snapshotUrl});
 });
 
-const controlRouter = require("./routes/control").init(cameraConfigs);
-app.use("/control", controlRouter);
+app.use("/control", cameraControl.router);
+
+app.use("/discovery", require("./routes/discovery"));
+
+app.use("/", (req, res) => {
+    res.redirect("/cameras");
+});
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {

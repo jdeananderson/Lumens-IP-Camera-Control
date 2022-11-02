@@ -48,8 +48,13 @@ export function addOnMoveHandler(handler) {
     handlers.push(handler);
 }
 
-export function getWhiteBalance() {
-    return axios.get(`${buildBaseUrl()}/whiteBalance`);
+export function getSettings() {
+    return axios.get(`${buildBaseUrl()}/settings`);
+}
+
+export function toggleAutoFocus(currentMode) {
+    let newMode = (currentMode === "AUTO") ? "MANUAL" : "AUTO";
+    return axios.put(`${buildBaseUrl()}/settings/focus/${newMode}`);
 }
 
 function buildBaseUrl() {

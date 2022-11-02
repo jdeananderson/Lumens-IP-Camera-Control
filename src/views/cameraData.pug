@@ -1,5 +1,12 @@
-.mode Mode: #{whiteBalance.mode}
-.red Red: #{whiteBalance.red}
-.blue Blue: #{whiteBalance.blue}
-#updateWhiteBalance Refresh
+.camera-data-title
+    div Camera Data
+    #updateCameraData Refresh
+.whitebalance-container
+    div White Balance:
+    .mode Mode: #{settings.whiteBalance.mode}
+    .red Red: #{settings.whiteBalance.red}
+    .blue Blue: #{settings.whiteBalance.blue}
+.focus-container
+    .focus-mode Focus Mode:
+    button#toggleAutoFocus #{settings.autoFocus}
 

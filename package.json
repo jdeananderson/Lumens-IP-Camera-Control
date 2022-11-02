@@ -32,7 +32,8 @@
     "morgan": "^1.10.0",
     "onvif": "^0.6.2",
     "pug": "^2.0.4",
-    "sharp": "^0.25.4"
+    "sharp": "^0.25.4",
+    "xml-formatter": "^2.6.1"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.14.0",
